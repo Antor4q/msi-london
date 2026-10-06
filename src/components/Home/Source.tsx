@@ -1,193 +1,222 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
-import { Playfair_Display, Inter } from "next/font/google";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500"], display: "swap" });
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/**
- * Content + image paths live here. Put your images in /public/images/source/
- * and just update `image` / `description` per item.
- * NOTE: only item 01 had a real description in the design; the rest are
- * placeholders, replace them with your final copy.
- */
-const ITEMS = [
+type Service = {
+  no: string;
+  title: string;
+  text: string;
+  src: string;
+  alt: string;
+};
+
+const SERVICES: Service[] = [
   {
+    no: "01",
     title: "Trade Service",
-    image: "/se1.jpg",
-    alt: "Wooden stool on a light grey background",
-    description:
-      "Furniture sourcing and specification support for interior designers, architects, and developers. Access trade discounts, showroom appointments, and trusted suppliers for luxury interiors.",
+    text: "Dedicated account support and trade discounts for interior designers, architects and developers, from first specification to final invoice.",
+    src: "/pr1.jpg",
+    alt: "Designer reviewing material samples at a table",
   },
+  // 2,6,10,11,13,16
   {
+    no: "02",
     title: "Furniture",
-    image: "/se2.jpg",
-    alt: "Furniture piece",
-    description:
-      "Sofas, chairs, tables and bespoke pieces sourced from trusted makers, matched to your project brief and budget.",
+    text: "Sofas, chairs, tables and storage sourced from trusted luxury makers, matched to your brief and budget.",
+    src: "/pr3.jpg",
+    alt: "Cream sofa in a styled living room",
   },
   {
+    no: "03",
     title: "Lighting",
-    image: "/se3.jpg",
-    alt: "Lighting fixture",
-    description:
-      "Pendants, wall lights and lamps selected to suit each space, with specification support from concept to install.",
+    text: "Statement pendants, floor lamps and architectural lighting selected to finish the room, not just fill it.",
+    src: "/pr4.jpg",
+    alt: "Linen floor lamp beside an armchair",
   },
   {
+    no: "04",
     title: "Kitchens & Joinery",
-    image: "/se4.jpg",
-    alt: "Kitchen and joinery detail",
-    description:
-      "Fitted kitchens and made-to-measure joinery, produced to your drawings and finished to a high standard.",
+    text: "Fitted kitchens and bespoke joinery, planned with your contractors and made to fit the space exactly.",
+    src: "/pr5.jpg",
+    alt: "Oak kitchen cabinetry with stone worktop",
   },
   {
+    no: "05",
     title: "Blinds & Window Treatments",
-    image: "/se2.jpg",
-    alt: "Window treatment",
-    description:
-      "Blinds, curtains and shutters measured, made and fitted to complement the rest of the interior.",
+    text: "Curtains, blinds and shutters made to measure, in fabrics that suit the light and the interior.",
+    src: "/pr7.jpg",
+    alt: "Linen curtains in a bright room",
   },
   {
+    no: "06",
     title: "Delivery & Installation",
-    image: "/se1.jpg",
-    alt: "Delivery and installation",
-    description:
-      "Coordinated delivery, careful handling and professional installation, so everything arrives and is placed correctly.",
+    text: "Careful delivery, white-glove placement and full installation, coordinated around your site schedule.",
+    src: "/pr8.jpg",
+    alt: "Furniture being carried into a finished interior",
   },
 ];
 
-export default function SourceSection() {
-  const [active, setActive] = useState(0);
-  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const textRefs = useRef<(HTMLParagraphElement | null)[]>([]);
-  const firstRender = useRef(true);
+export default function WhatWeSource() {
+  const root = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const d = reduce || firstRender.current ? 0 : 0.5;
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
 
-    ITEMS.forEach((_, i) => {
-      const img = imageRefs.current[i];
-      const txt = textRefs.current[i];
-      const isActive = i === active;
-      if (!img || !txt) return;
+      mm.add({ reduce: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const { reduce } = context.conditions as { reduce: boolean };
+        if (reduce) return; // cards still stack (CSS sticky), just no motion
 
-      gsap.killTweensOf([img, txt, img.firstElementChild]);
-
-      // Image crossfade + gentle settle-in on the new one
-      gsap.to(img, {
-        opacity: isActive ? 1 : 0,
-        duration: d,
-        ease: "power2.out",
-        overwrite: true,
-      });
-      if (isActive && d > 0) {
+        // Title drifts slower than the page
         gsap.fromTo(
-          img.firstElementChild,
-          { scale: 1.08 },
-          { scale: 1, duration: 0.9, ease: "power3.out" }
+          "[data-title]",
+          { y: 50 },
+          {
+            y: -50,
+            ease: "none",
+            scrollTrigger: {
+              trigger: "[data-title]",
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          }
         );
-      }
 
-      // Description fade + tiny rise
-      gsap.to(txt, {
-        opacity: isActive ? 1 : 0,
-        y: isActive ? 0 : 8,
-        duration: d,
-        delay: isActive && d > 0 ? 0.1 : 0,
-        ease: "power2.out",
-        overwrite: true,
+        const rows = gsap.utils.toArray<HTMLElement>("[data-row]", root.current);
+
+        rows.forEach((row, i) => {
+          const inner = row.querySelector("[data-inner]");
+          const shade = row.querySelector("[data-shade]");
+          const img = row.querySelector("[data-parallax]");
+          const next = rows[i + 1];
+
+          // Image parallax runs for the whole time this card is on screen
+          gsap.fromTo(
+            img,
+            { yPercent: -8 },
+            {
+              yPercent: 8,
+              ease: "none",
+              scrollTrigger: {
+                trigger: row,
+                start: "top bottom",
+                endTrigger: next ?? root.current,
+                end: next ? "top 25%" : "bottom bottom",
+                scrub: true,
+              },
+            }
+          );
+
+          // While the next card slides over this one: shrink + dim it
+          if (next) {
+            const trigger = {
+              trigger: next,
+              start: "top bottom",
+              end: "top 25%",
+              scrub: true,
+            };
+            gsap.to(inner, {
+              scale: 0.94,
+              transformOrigin: "center top",
+              ease: "none",
+              scrollTrigger: trigger,
+            });
+            gsap.to(shade, { opacity: 0.14, ease: "none", scrollTrigger: trigger });
+          }
+        });
       });
-    });
 
-    firstRender.current = false;
-  }, [active]);
+      return () => mm.revert();
+    },
+    { scope: root }
+  );
 
   return (
-    <section className="bg-white px-6 pb-16 text-[#2e2a25] md:px-[5%] md:pb-22">
-      <div className="mx-auto max-w-[1500px]">
-        <h2
-          className={`${playfair.className} text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
+    <div ref={root} className="mx-auto w-full max-w-[1500px]">
+     <h2
+          className={`font-playfair uppercase text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
         >
-          WHAT WE SOURCE
+          what we source
         </h2>
 
-        <div className="mt-12 grid grid-cols-1 gap-10 md:mt-16 md:grid-cols-12 md:gap-8">
-          {/* Left: list */}
-          <ul className="md:col-span-7" onMouseLeave={() => undefined}>
-            {ITEMS.map((item, i) => {
-              const isActive = i === active;
-              return (
-                <li key={item.title} className="border-b border-[#2e2a25]/10 last:border-b-0">
-                  <button
-                    type="button"
-                    onMouseEnter={() => setActive(i)}
-                    onFocus={() => setActive(i)}
-                    onClick={() => setActive(i)}
-                    aria-current={isActive}
-                    className={`${playfair.className} flex w-full items-baseline gap-4 py-3 text-left text-[clamp(1.7rem,3.4vw,3.1rem)] font-semibold leading-tight transition-opacity duration-300 lining-nums focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2e2a25] ${
-                      isActive ? "opacity-100" : "opacity-40 hover:opacity-70"
-                    }`}
-                  >
-                    <span>{String(i + 1).padStart(2, "0")}</span>
-                    <span>{item.title}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
 
-          {/* Right: dynamic card */}
-          <div className="bg-[#f3f0e9] p-5 md:col-span-5 md:p-8 md:self-start">
-            <div className="relative aspect-[544/322] w-full overflow-hidden bg-[#e4e1da]">
-              {ITEMS.map((item, i) => (
+      {/* Each card is sticky, so the next one slides up and sits on top.
+          No ancestor of this list may have overflow-hidden. */}
+      <ul className="mt-14 flex flex-col gap-6 [--stack-top:5.5rem] md:mt-20 md:gap-[12vh] md:[--stack-top:7rem]">
+        {SERVICES.map((s, i) => {
+          const flip = i % 2 === 1;
+          return (
+            <li
+              key={s.no}
+              data-row
+              className="sticky"
+              style={{ top: `calc(var(--stack-top) + ${i * 14}px)` }}
+            >
+              <div
+                data-inner
+                className="group relative grid items-center gap-6 bg-white p-4 md:grid-cols-12 md:gap-0 md:p-8"
+              >
                 <div
-                  key={item.image}
-                  ref={(el) => {
-                    imageRefs.current[i] = el;
-                  }}
-                  className="absolute inset-0"
-                  style={{ opacity: i === 0 ? 1 : 0 }}
-                  aria-hidden={i !== active}
+                  className={`relative aspect-[4/3] w-full overflow-hidden bg-[#ececea] md:col-span-6 md:row-start-1 ${
+                    flip ? "md:col-start-7" : "md:col-start-1"
+                  }`}
                 >
-                  <Image
-                    src={item.image}
-                    alt={item.alt}
-                    fill
-                    sizes="(min-width: 768px) 38vw, 100vw"
-                    className="object-cover will-change-transform"
-                    priority={i === 0}
-                  />
+                  <div
+                    data-parallax
+                    className="absolute inset-x-0 -top-[12%] h-[124%]"
+                  >
+                    <Image
+                      src={s.src}
+                      alt={s.alt}
+                      fill
+                      sizes="(min-width: 768px) 45vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            {/* All descriptions stacked in one grid cell so height never jumps */}
-            <div className="mt-6 grid" aria-live="polite">
-              {ITEMS.map((item, i) => (
-                <p
-                  key={item.title}
-                  ref={(el) => {
-                    textRefs.current[i] = el;
-                  }}
-                  className={`${inter.className} col-start-1 row-start-1 max-w-[52ch] text-[15px] font-medium leading-relaxed`}
-                  style={{ opacity: i === 0 ? 1 : 0 }}
-                  aria-hidden={i !== active}
+                <div
+                  className={`pb-2 md:col-span-5 md:row-start-1 md:pb-0 ${
+                    flip ? "md:col-start-1 md:pl-4" : "md:col-start-8"
+                  }`}
                 >
-                  {item.description}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+                  <span className="text-[18px] font-bold tabular-nums tracking-widest text-[#2b2b28]/60">
+                    {s.no}
+                  </span>
+
+                  <h3 className="mt-4 font-arial font-medium text-3xl text-[#2b2b28] md:text-4xl">
+                    <span className="relative inline-block pb-1.5">
+                      {s.title}
+                      <span
+                        aria-hidden
+                        className="absolute bottom-0 left-0 h-[1.5px] w-full origin-right scale-x-0 bg-[#1f1f1d] transition-transform duration-500 ease-out group-hover:origin-left group-hover:scale-x-100 motion-reduce:transition-none"
+                      />
+                    </span>
+                  </h3>
+
+                  <p className="mt-5 max-w-[44ch] font-arial text-[14px] font-medium leading-[1.3] tracking-[-0.01em] sm:text-[15px] md:text-[16px] lg:text-[18px] xl:text-[18px] text-[#2b2b28]/75">
+                    {s.text}
+                  </p>
+                </div>
+
+                {/* dims the card while the next one covers it */}
+                <div
+                  data-shade
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-[#1f1f1d] opacity-0"
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

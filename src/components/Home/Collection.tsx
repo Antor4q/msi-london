@@ -1,192 +1,258 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Playfair_Display, Inter } from "next/font/google";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500"], display: "swap" });
+type Item = {
+  name: string;
+  href: string;
+  src: string;
+  alt: string;
+  rotate: number; // fixed values, keep between -3 and 3
+};
 
-/**
- * 4 collections. Names, counts and lines are PLACEHOLDERS, replace with real ones.
- * Put images in /public/images/collections/
- */
-const COLLECTIONS = [
+const ITEMS: Item[] = [
   {
-    name: "Sofas & Seating",
-    count: "24 pieces",
-    line: "Sculpted sofas, lounge chairs and benches in bouclé, velvet and leather.",
-    image: "/se1.jpg",
-    alt: "Sculpted cream sofa",
-    href: "/collections/seating",
+    name: "Plywood Chair",
+    href: "/collection/plywood-chair",
+    src: "/col1.jpg",
+    alt: "Moulded plywood lounge chair with splayed wooden legs",
+    rotate: -3,
   },
   {
-    name: "Tables & Storage",
-    count: "18 pieces",
-    line: "Dining, coffee and side tables with sideboards in solid wood and stone.",
-    image: "/se2.jpg",
-    alt: "Wooden table",
-    href: "/collections/tables",
+    name: "Curved Sofa",
+    href: "/collection/curved-sofa",
+    src: "/col2.jpg",
+    alt: "Cream bouclé curved sofa",
+    rotate: 2,
   },
   {
-    name: "Bedroom",
-    count: "16 pieces",
-    line: "Beds, headboards and bedside pieces designed for calm, layered rooms.",
-    image: "/se3.jpg",
-    alt: "Bedroom furniture",
-    href: "/collections/bedroom",
+    name: "Ceramic Bowls",
+    href: "/collection/ceramic-bowls",
+    src: "/col3.jpg",
+    alt: "Stack of four matte ceramic bowls",
+    rotate: -2,
   },
   {
-    name: "Contract & Hospitality",
-    count: "30 pieces",
-    line: "Durable, specification-ready furniture for hotels, offices and developments.",
-    image: "/se4.jpg",
-    alt: "Hospitality lounge seating",
-    href: "/collections/contract",
+    name: "Rattan Armchair",
+    href: "/collection/rattan-armchair",
+    src: "/col4.jpg",
+    alt: "Teak armchair with woven rattan seat and back",
+    rotate: 3,
   },
 ];
 
-export default function CollectionSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLUListElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
+export default function Collection() {
+  const root = useRef<HTMLDivElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const wrapper = wrapperRef.current;
-    const track = trackRef.current;
-    const bar = barRef.current;
-    if (!section || !wrapper || !track || !bar) return;
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
 
-    const mm = gsap.matchMedia();
+      mm.add(
+        {
+          desktop: "(min-width: 768px)",
+          fine: "(hover: hover) and (pointer: fine)",
+          reduce: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const { desktop, fine, reduce } = context.conditions as {
+            desktop: boolean;
+            fine: boolean;
+            reduce: boolean;
+          };
 
-    // Desktop + motion allowed = pinned horizontal scroll.
-    // Mobile / reduced motion = normal layout (no pin).
-    mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
-      const getDistance = () => track.scrollWidth - window.innerWidth;
+          const cards = gsap.utils.toArray<HTMLElement>("[data-card]");
+          const cleanups: Array<() => void> = [];
 
-      wrapper.style.overflowX = "hidden";
+          // 1. Base tilt: only on desktop, mobile carousel stays straight
+          cards.forEach((card) => {
+            const frame = card.querySelector("[data-frame]");
+            const rot = desktop ? Number(card.dataset.rotate) : 0;
+            gsap.set(frame, { rotation: rot });
+          });
 
-      const scrollBase = {
-        trigger: section,
-        start: "top top",
-        end: () => "+=" + getDistance(),
-        invalidateOnRefresh: true,
-      };
-
-      const slide = gsap.to(track, {
-        x: () => -getDistance(),
-        ease: "none",
-        scrollTrigger: { ...scrollBase, pin: true, scrub: 1, anticipatePin: 1 },
-      });
-
-   
-
-      // Photo drifts inside its frame while the card travels across the screen
-      track.querySelectorAll<HTMLElement>("[data-img]").forEach((img) => {
-        gsap.fromTo(
-          img,
-          { xPercent: -8, scale: 1.2 },
-          {
-            xPercent: 8,
-            scale: 1.2,
-            ease: "none",
-            scrollTrigger: {
-              trigger: img.closest("[data-card]"),
-              containerAnimation: slide,
-              start: "left right",
-              end: "right left",
-              scrub: true,
-            },
+          // 2. Scroll entrance with stagger (single orchestrated moment)
+          if (!reduce) {
+            gsap.from(cards, {
+              y: 70,
+              opacity: 0,
+              duration: 1,
+              ease: "power3.out",
+              stagger: 0.14,
+              scrollTrigger: {
+                trigger: root.current,
+                start: "top 75%",
+                once: true,
+              },
+            });
           }
-        );
-      });
 
-      return () => {
-        wrapper.style.overflowX = "";
-      };
-    });
+          // 3. Hover: straighten + scale up (desktop only)
+          if (desktop && !reduce) {
+            cards.forEach((card) => {
+              const frame = card.querySelector("[data-frame]");
+              const rot = Number(card.dataset.rotate);
 
-    return () => mm.revert();
-  }, []);
+              const enter = () => {
+                gsap.set(card, { zIndex: 10 });
+                gsap.to(frame, {
+                  rotation: 0,
+                  scale: 1.06,
+                  duration: 0.6,
+                  ease: "power3.out",
+                  overwrite: "auto",
+                });
+              };
+              const leave = () => {
+                gsap.to(frame, {
+                  rotation: rot,
+                  scale: 1,
+                  duration: 0.6,
+                  ease: "power3.out",
+                  overwrite: "auto",
+                  onComplete: () => {
+                    gsap.set(card, { zIndex: 1 });
+                  },
+                });
+              };
+
+              card.addEventListener("pointerenter", enter);
+              card.addEventListener("pointerleave", leave);
+              card.addEventListener("focusin", enter);
+              card.addEventListener("focusout", leave);
+              cleanups.push(() => {
+                card.removeEventListener("pointerenter", enter);
+                card.removeEventListener("pointerleave", leave);
+                card.removeEventListener("focusin", enter);
+                card.removeEventListener("focusout", leave);
+              });
+            });
+          }
+
+          // 4. Custom "View" cursor (mouse devices only)
+          if (desktop && fine && cursor.current) {
+            const el = cursor.current;
+            gsap.set(el, { xPercent: -50, yPercent: -50, scale: 0.6 });
+            const xTo = gsap.quickTo(el, "x", { duration: 0.4, ease: "power3" });
+            const yTo = gsap.quickTo(el, "y", { duration: 0.4, ease: "power3" });
+
+            const move = (e: PointerEvent) => {
+              xTo(e.clientX);
+              yTo(e.clientY);
+            };
+            window.addEventListener("pointermove", move);
+            cleanups.push(() => window.removeEventListener("pointermove", move));
+
+            cards.forEach((card) => {
+              const show = () =>
+                gsap.to(el, {
+                  opacity: 1,
+                  scale: 1,
+                  duration: 0.3,
+                  ease: "power2.out",
+                  overwrite: "auto",
+                });
+              const hide = () =>
+                gsap.to(el, {
+                  opacity: 0,
+                  scale: 0.6,
+                  duration: 0.25,
+                  ease: "power2.in",
+                  overwrite: "auto",
+                });
+              card.addEventListener("pointerenter", show);
+              card.addEventListener("pointerleave", hide);
+              cleanups.push(() => {
+                card.removeEventListener("pointerenter", show);
+                card.removeEventListener("pointerleave", hide);
+              });
+            });
+          }
+
+          return () => cleanups.forEach((fn) => fn());
+        }
+      );
+
+      return () => mm.revert();
+    },
+    { scope: root }
+  );
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative bg-[#E6E6E4] py-16 text-[#2e2a25] md:flex md:h-screen md:flex-col md:py-24"
+  <div ref={root} className="bg-[#E5E5E3] md:px-[5%] md:py-22 px-6 py-16">
+  <div
+      
+      className="mx-auto flex w-full max-w-[1500px] flex-col"
     >
-      <div className="px-6 md:px-[7%] md:pt-16">
-        <h2
-          className={`${playfair.className} text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
+     <h2
+          className={`font-playfair text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
         >
-         OUR COLLECTION
+          OUR COLLECTION
         </h2>
-      </div>
 
-      <div ref={wrapperRef} className="mt-12 md:mt-0 md:flex md:flex-1 md:items-center md:overflow-x-auto">
-        <ul
-          ref={trackRef}
-          className="flex flex-col gap-14 px-6 will-change-transform md:w-max md:flex-row md:gap-[6vw] md:px-[7%]"
-        >
-          {COLLECTIONS.map((c) => (
-            <li
-              key={c.name}
-              data-card
-              className="md:w-[40vw] md:max-w-[640px] md:shrink-0 md:even:translate-y-12"
+      {/* Mobile: scroll-snap carousel. Desktop: tilted row. */}
+      <ul
+        className="
+          mt-14 -mx-6 flex w-[calc(100%+3rem)] snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4
+          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+          md:mx-0 md:w-full md:snap-none md:items-start md:gap-5 md:overflow-visible md:px-0 md:py-8
+        "
+      >
+        {ITEMS.map((item, i) => (
+          <li
+            key={item.name}
+            data-card
+            data-rotate={item.rotate}
+            className={`relative w-[72%] shrink-0 snap-center md:w-auto md:flex-1 ${
+              i % 2 === 1 ? "md:mt-12" : ""
+            }`}
+          >
+            <Link
+              href={item.href}
+              className="group block outline-none"
+              aria-label={`View ${item.name}`}
             >
-              <Link
-                href={c.href}
-                className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e2a25]"
+              <div
+                data-frame
+                className="relative aspect-[4/5] w-full overflow-hidden bg-[#d9d9d6] will-change-transform group-focus-visible:ring-2 group-focus-visible:ring-[#1f1f1d] group-focus-visible:ring-offset-4 group-focus-visible:ring-offset-[#E5E5E3]"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#e4e1da] md:aspect-auto md:h-[46vh]">
-                  <Image
-                    data-img
-                    src={c.image}
-                    alt={c.alt}
-                    fill
-                    sizes="(min-width: 768px) 40vw, 100vw"
-                    className="object-cover will-change-transform"
-                  />
-                </div>
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  fill
+                  sizes="(min-width: 768px) 22vw, 72vw"
+                  className="object-cover"
+                />
+              </div>
+              <p className="mt-5 text-center relative font-arial font-medium pb-1 text-sm tracking-wide text-[#2b2b28] md:text-2xl">
+                {item.name}
+              </p>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
-                <div className="mt-5 flex items-baseline justify-between gap-6">
-                  <h3
-                    className={`${playfair.className} text-[clamp(1.6rem,2.4vw,2.4rem)] font-semibold leading-tight`}
-                  >
-                    {c.name}
-                  </h3>
-                  <span className={`${inter.className} shrink-0 text-sm font-medium opacity-60`}>
-                    {c.count}
-                  </span>
-                </div>
+      
 
-                <p className={`${inter.className} mt-2 max-w-[48ch] text-[15px] font-medium leading-relaxed`}>
-                  {c.line}
-                </p>
+    
 
-                <span
-                  className={`${inter.className} relative mt-4 inline-block text-sm font-semibold`}
-                >
-                  View collection
-                  <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-[#2e2a25] transition-transform duration-500 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-     
-    </section>
+      {/* Custom cursor, hidden on touch devices */}
+      {/* <div
+        ref={cursor}
+        aria-hidden
+        className="pointer-events-none fixed left-0 top-0 z-50 hidden size-20 items-center justify-center rounded-full bg-[#1f1f1d] text-xs font-medium tracking-wide text-white opacity-0 md:flex"
+      >
+        View
+      </div> */}
+    </div>
+  </div>
   );
 }

@@ -209,7 +209,7 @@ const Hero = () => {
             className="
               font-playfair
               text-[52px]
-              font-semibold
+              font-medium
               uppercase
               leading-[0.82]
               tracking-[-0.055em]
@@ -218,7 +218,7 @@ const Hero = () => {
               md:text-[105px]
               lg:text-[150px]
               xl:text-[180px]
-              2xl:text-[195px]
+              2xl:text-[190px]
             "
           >
             <span className="block">Luxury Furniture</span>

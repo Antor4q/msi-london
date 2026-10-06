@@ -1,7 +1,8 @@
 import AboutSection from "../components/Home/About";
 import Hero from "../components/Home/Banner";
-import CollectionSection from "../components/Home/Collection";
-import FeaturedSection from "../components/Home/Featured";
+import Brands from "../components/Home/Brands";
+import Collection from "../components/Home/Collection";
+import FeaturedProducts from "../components/Home/Featured";
 import SourceSection from "../components/Home/Source";
 
 
@@ -11,8 +12,9 @@ export default function Home() {
    <Hero/>
    <AboutSection/>
    <SourceSection/>
-   <CollectionSection/>
-   <FeaturedSection/>
+   <Collection/>
+   <FeaturedProducts/>
+   <Brands/>
    </div>
   );
 }

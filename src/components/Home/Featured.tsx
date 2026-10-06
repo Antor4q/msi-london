@@ -1,238 +1,244 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Playfair_Display, Inter } from "next/font/google";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500"], display: "swap" });
-
-/**
- * 6 featured products = 3 columns x 2 products.
- * Everything below is PLACEHOLDER content, replace with real products.
- * Images go in /public/images/featured/ : each product has a main image and a
- * second angle (`imageAlt`) that fades in on hover.
- */
 type Product = {
   name: string;
-  material: string;
   price: string;
-  image: string;
-  imageAlt: string;
-  ratio: string; // tailwind aspect class, mixed ratios give the grid its rhythm
   href: string;
+  src: string;
+  alt: string;
+  /** grid span + vertical offset (static strings so Tailwind can see them) */
+  cell: string;
+  /** image shape, this is what makes every card a different size */
+  aspect: string;
+  /** px the whole card drifts up/down while scrolling (desktop only) */
+  drift: number;
 };
 
-const COLUMNS: Product[][] = [
-  [
-    {
-      name: "Cloud Bouclé Sofa",
-      material: "Bouclé fabric, solid walnut base",
-      price: "Trade price on request",
-      image: "/se1.jpg",
-      imageAlt: "/se1.jpg",
-      ratio: "aspect-[4/5]",
-      href: "/products/cloud-boucle-sofa",
-    },
-    {
-      name: "Travertine Coffee Table",
-      material: "Honed travertine, brass detail",
-      price: "Trade price on request",
-      image: "/se2.jpg",
-      imageAlt: "/se2.jpg",
-      ratio: "aspect-square",
-      href: "/products/travertine-coffee-table",
-    },
-  ],
-  [
-    {
-      name: "Walnut Lounge Chair",
-      material: "Velvet upholstery, walnut frame",
-      price: "Trade price on request",
-      image: "/se3.jpg",
-      imageAlt: "/se3.jpg",
-      ratio: "aspect-square",
-      href: "/products/walnut-lounge-chair",
-    },
-    {
-      name: "Ribbed Sideboard",
-      material: "Fluted oak veneer, soft-close doors",
-      price: "Trade price on request",
-      image: "/se4.jpg",
-      imageAlt: "/se4.jpg",
-      ratio: "aspect-[4/5]",
-      href: "/products/ribbed-sideboard",
-    },
-  ],
-  [
-    {
-      name: "Arc Floor Lamp",
-      material: "Brushed brass, marble base",
-      price: "Trade price on request",
-      image: "/se1.jpg",
-      imageAlt: "/se1.jpg",
-      ratio: "aspect-[4/5]",
-      href: "/products/arc-floor-lamp",
-    },
-    {
-      name: "Oak Dining Table",
-      material: "Solid oak, seats eight",
-      price: "Trade price on request",
-      image: "/se2.jpg",
-      imageAlt: "/se2.jpg",
-      ratio: "aspect-square",
-      href: "/products/oak-dining-table",
-    },
-  ],
+const PRODUCTS: Product[] = [
+  {
+    name: "Oak Dining Table",
+    price: "$1,490",
+    href: "/products/oak-dining-table",
+    src: "/pr6.jpg",
+    alt: "Solid oak dining table with tapered legs",
+    cell: "col-span-2 md:col-span-5",
+    aspect: "aspect-[6/5]",
+    drift: 22
+  },
+  {
+    name: "Bouclé Curved Sofa",
+    price: "$2,350",
+    href: "/products/boucle-curved-sofa",
+    src: "/pr2.jpg",
+    alt: "Cream bouclé curved sofa",
+    cell: "col-span-1 md:col-span-4 md:mt-20",
+    aspect: "aspect-square",
+    drift: -14
+  },
+  {
+    name: "Stoneware Bowl Set",
+    price: "$96",
+    href: "/products/stoneware-bowl-set",
+    src: "/pr11.avif",
+    alt: "Set of four matte stoneware bowls",
+    cell: "col-span-1 md:col-span-3 md:mt-8",
+    aspect: "aspect-[3/4]",
+    drift: 18
+  },
+  {
+    name: "Rattan Armchair",
+    price: "$780",
+    href: "/products/rattan-armchair",
+    src: "/pr10.avif",
+    alt: "Teak armchair with woven rattan back",
+    cell: "col-span-2 md:col-span-5",
+    aspect: "aspect-[4/3]",
+    drift: -10
+  },
+  {
+    name: "Linen Floor Lamp",
+    price: "$210",
+    href: "/products/linen-floor-lamp",
+    src: "/pr16.jpg",
+    alt: "Floor lamp with a linen shade and oak stand",
+    cell: "col-span-1 md:col-span-3 md:mt-14",
+    aspect: "aspect-[4/5]",
+    drift: 20
+  }, 
+  {
+    name: "Walnut Side Table",
+    price: "$420",
+    href: "/products/walnut-side-table",
+    src: "/pr13.avif",
+    alt: "Round walnut side table",
+    cell: "col-span-1 md:col-span-4 md:mt-6",
+    aspect: "aspect-[4/5] md:aspect-square",
+    drift: -16
+  },
 ];
 
-/**
- * Parallax per column (px, symmetric around 0).
- * Outer columns move a lot, the middle one barely moves: columns drift apart
- * and back together as you scroll, so cards never sit on one flat line.
- */
-const COLUMN_PARALLAX = [
-  { from: 80, to: -80 },
-  { from: 20, to: -20 },
-  { from: 110, to: -110 },
-];
+export default function FeaturedProducts() {
+  const root = useRef<HTMLDivElement>(null);
 
-export default function FeaturedSection() {
-  const sectionRef = useRef<HTMLElement>(null);
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
+      mm.add(
+        {
+          desktop: "(min-width: 768px)",
+          reduce: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const { desktop, reduce } = context.conditions as {
+            desktop: boolean;
+            reduce: boolean;
+          };
+          const cards = gsap.utils.toArray<HTMLElement>(
+            "[data-product]",
+            root.current
+          );
 
-    const mm = gsap.matchMedia();
+          // Scroll entrance: each card reveals when it reaches the viewport
+          if (!reduce) {
+            gsap.set(cards, { y: 60, opacity: 0 });
+            ScrollTrigger.batch(cards, {
+              start: "top 88%",
+              once: true,
+              onEnter: (batch) =>
+                gsap.to(batch, {
+                  y: 0,
+                  opacity: 1,
+                  duration: 0.9,
+                  ease: "power3.out",
+                  stagger: 0.1,
+                }),
+            });
+          }
 
-    mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
-      const scrollConfig = {
-        trigger: section,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 1,
-      };
+          if (reduce) return;
 
-      section.querySelectorAll<HTMLElement>("[data-col]").forEach((col) => {
-        const i = Number(col.dataset.col);
-        gsap.fromTo(
-          col,
-          { y: COLUMN_PARALLAX[i].from },
-          { y: COLUMN_PARALLAX[i].to, ease: "none", scrollTrigger: scrollConfig }
-        );
-      });
+          // Parallax 1: title drifts slower than the page
+          gsap.fromTo(
+            "[data-title]",
+            { y: 50 },
+            {
+              y: -50,
+              ease: "none",
+              scrollTrigger: {
+                trigger: "[data-title]",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+              },
+            }
+          );
 
-      // Soft drift of each photo inside its frame
-      section.querySelectorAll<HTMLElement>("[data-inner]").forEach((img) => {
-        gsap.fromTo(
-          img,
-          { yPercent: -5, scale: 1.12 },
-          { yPercent: 5, scale: 1.12, ease: "none", scrollTrigger: scrollConfig }
-        );
-      });
-    });
+          // Parallax 2: image moves inside its frame
+          cards.forEach((card) => {
+            const inner = card.querySelector("[data-parallax]");
+            gsap.fromTo(
+              inner,
+              { yPercent: -8 },
+              {
+                yPercent: 8,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: card,
+                  start: "top bottom",
+                  end: "bottom top",
+                  scrub: true,
+                },
+              }
+            );
 
-    return () => mm.revert();
-  }, []);
+            // Parallax 3: whole card drifts at its own speed (desktop only)
+            if (desktop) {
+              const link = card.querySelector<HTMLElement>("[data-drift]");
+              const d = Number(link?.dataset.drift ?? 0);
+              gsap.fromTo(
+                link,
+                { y: d },
+                {
+                  y: -d,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger: card,
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true,
+                  },
+                }
+              );
+            }
+          });
+        }
+      );
+
+      return () => mm.revert();
+    },
+    { scope: root }
+  );
 
   return (
-    <section
-      ref={sectionRef}
-      className="bg-white px-6 py-24 text-[#2e2a25] md:px-[7%] md:py-32"
-    >
-      <div className="mx-auto max-w-[1600px]">
-        {/* Heading row */}
-        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-          <h2
-            className={`${playfair.className} text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
-          >
-            FEATURED
-          </h2>
+    <div ref={root} className="mx-auto w-full max-w-[1500px]  md:py-22 py-16">
+     <h2
+          className={`font-playfair text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
+        >
+          FEATURED PRODUCTS
+        </h2>
 
-          <div className="flex flex-col items-start gap-6 md:max-w-[34ch]">
-            <p className={`${inter.className} text-[15px] font-medium leading-relaxed`}>
-              A selection of pieces our trade clients specify most often.
-            </p>
+
+      <ul className="mt-14 grid grid-cols-2 items-start gap-3 md:mt-16 md:grid-cols-12 md:gap-x-6 md:gap-y-10">
+        {PRODUCTS.map((p) => (
+          <li key={p.name} data-product className={p.cell}>
             <Link
-              href="/products"
-              className="inline-block bg-[#2e2a25] px-10 py-4 font-sans text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#4a443c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e2a25]"
+              href={p.href}
+              data-drift={p.drift}
+              className="group block bg-white p-3 outline-none border border-[#f5f5f5] md:p-4"
             >
-              View all products
+              <div
+                className={`relative w-full overflow-hidden bg-[#ececea] ${p.aspect}`}
+              >
+                <div
+                  data-parallax
+                  className="absolute inset-x-0 -top-[12%] h-[124%]"
+                >
+                  <Image
+                    src={p.src}
+                    alt={p.alt}
+                    fill
+                    sizes="(min-width: 768px) 40vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-baseline justify-between gap-3">
+                <span className="relative font-arial font-medium inline-block pb-1 text-sm tracking-wide text-[#2b2b28] md:text-2xl">
+                  {p.name}
+                  <span
+                    aria-hidden
+                    className="absolute bottom-0 left-0 h-[1.5px] w-full origin-right scale-x-0 bg-[#1f1f1d] transition-transform duration-500 ease-out group-hover:origin-left group-hover:scale-x-100 group-focus-visible:origin-left group-focus-visible:scale-x-100 motion-reduce:transition-none"
+                  />
+                </span>
+                <span className="text-sm md:text-3xl font-arial font-medium tabular-nums text-[#2b2b28]">
+                  {p.price}
+                </span>
+              </div>
             </Link>
-          </div>
-        </div>
-
-        {/*
-          Grid: 1 col mobile, 2 col tablet, 3 col desktop.
-          Below lg the column wrappers use `contents`, so cards simply flow in order.
-        */}
-        <div className="mt-16 grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:mt-24 lg:grid-cols-3 lg:gap-x-[3vw]">
-          {COLUMNS.map((column, colIndex) => (
-            <div
-              key={colIndex}
-              data-col={colIndex}
-              className="contents will-change-transform lg:flex lg:flex-col lg:gap-y-20"
-            >
-              {column.map((p) => (
-                <article key={p.name}>
-                  <Link
-                    href={p.href}
-                    className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e2a25]"
-                  >
-                    <div className={`relative w-full overflow-hidden bg-[#e4e1da] ${p.ratio}`}>
-                      <div data-inner className="absolute inset-0 will-change-transform">
-                        <Image
-                          src={p.image}
-                          alt={p.name}
-                          fill
-                          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-                          className="object-cover"
-                        />
-                        {/* Second angle fades in on hover / keyboard focus */}
-                        <Image
-                          src={p.imageAlt}
-                          alt=""
-                          aria-hidden
-                          fill
-                          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-                          className="object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100 group-focus-visible:opacity-100"
-                        />
-                      </div>
-                    </div>
-
-                    <h3
-                      className={`${playfair.className} mt-5 text-[clamp(1.5rem,2vw,2rem)] font-semibold leading-tight`}
-                    >
-                      {p.name}
-                    </h3>
-                    <p className={`${inter.className} mt-1 text-[15px] font-medium leading-relaxed`}>
-                      {p.material}
-                    </p>
-
-                    <div className={`${inter.className} mt-3 flex items-center justify-between text-sm`}>
-                      <span className="font-medium opacity-60">{p.price}</span>
-                      <span className="relative font-semibold">
-                        Enquire
-                        <span className="absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-[#2e2a25] transition-transform duration-500 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
-                      </span>
-                    </div>
-                  </Link>
-                </article>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
