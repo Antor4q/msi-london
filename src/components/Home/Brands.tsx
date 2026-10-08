@@ -62,7 +62,7 @@ export default function Brands() {
   );
 
   return (
-    <div ref={root} className="mx-auto w-full max-w-[1500px]">
+    <div ref={root} className="mx-auto w-full max-w-[1500px] pb-24">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
           <h2

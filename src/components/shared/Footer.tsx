@@ -97,12 +97,12 @@ export default function Footer() {
   );
 
   return (
-    <footer ref={root}  className="bg-[#141413]">
+    <footer ref={root}  className="bg-[#141413] pt-24">
      <div className="mx-auto w-full max-w-[1500px] text-[#E5E5E3]">
        <div>
         {/* Top: statement + CTA */}
         <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
-          <h2 className="max-w-[14ch] text-left font-serif text-4xl font-normal uppercase tracking-tight md:text-6xl">
+          <h2 className="max-w-[600px] text-left font-serif text-4xl font-normal uppercase tracking-tight md:text-6xl">
             Let&apos;s furnish your next space
           </h2>
 
@@ -222,14 +222,14 @@ export default function Footer() {
           <p
             data-wordmark
             aria-hidden
-            className="select-none text-center font-serif text-[min(15vw,220px)] uppercase leading-[0.9] tracking-tight text-[#E5E5E3]"
+            className="select-none text-center font-serif text-[240px] uppercase leading-[0.9] tracking-tight text-[#E5E5E3]"
           >
             MSI London
           </p>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-6 flex flex-col gap-4 text-xs tracking-wide text-[#E5E5E3]/50 md:flex-row md:items-center md:justify-between">
+        <div className="my-6 flex flex-col gap-4 text-xs tracking-wide text-[#E5E5E3]/50 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} MSI London. All rights reserved.</p>
 
           <div className="flex items-center gap-6">
