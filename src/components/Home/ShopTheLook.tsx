@@ -16,9 +16,15 @@ export type Hotspot = {
   detail?: string;
   price: number;
   href: string;
-  /** dot position on the image, in percent (0–100) */
+  /** dot position on the image, in percent (0–100), md (768px) and up */
   x: number;
   y: number;
+  /**
+   * OPTIONAL: dot position below 768px. Mobile e image alada aspect ratio
+   * (4/3) te crop hoy, tai dot onno jaygay porte pare. Na dile x/y use hoy.
+   */
+  mx?: number;
+  my?: number;
   /** optional product thumbnail */
   thumb?: string;
 };
@@ -36,6 +42,7 @@ const image = {
 };
 
 // x / y = dot position on the image (percent of the visible area)
+// mx / my = (optional) mobile position, jodi alada lage
 const hotspots: Hotspot[] = [
   {
     id: "sofa",
@@ -123,7 +130,8 @@ export default function ShopTheLook() {
     [pinned]
   );
 
-  // Escape closes, click outside the image unpins
+  // Escape closes, tap/click anywhere outside a marker closes
+  // (mobile e bottom sheet khola thakle image e tap korleo bondho hoy)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -132,7 +140,11 @@ export default function ShopTheLook() {
       }
     };
     const onDown = (e: PointerEvent) => {
-      if (!stageRef.current?.contains(e.target as Node)) setPinned(null);
+      const el = e.target as Element | null;
+      if (!el?.closest?.("[data-marker]")) {
+        setPinned(null);
+        setHovered(null);
+      }
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onDown);
@@ -151,7 +163,7 @@ export default function ShopTheLook() {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: stageRef.current,
-            start: "top 75%",
+            start: "top 80%",
             once: true,
           },
         });
@@ -193,17 +205,18 @@ export default function ShopTheLook() {
     <section
       ref={rootRef}
       aria-label={title}
-      className="mx-auto w-full max-w-[1500px]  py-24"
+      className="mx-auto w-full max-w-[1500px] py-14 sm:py-16 md:py-24"
       style={{ color: INK }}
     >
-      <h2 className="font-playfair uppercase text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight mb-10">
+      <h2 className="mb-6 font-playfair text-[clamp(2.25rem,10vw,3.5rem)] font-bold uppercase leading-none tracking-tight sm:mb-8 md:mb-10 md:text-[clamp(3rem,7vw,6rem)]">
         {title}
       </h2>
 
-      {/* Height: change aspect ratio here (bigger 2nd number = taller) */}
+      {/* Height: change aspect ratio here (bigger 2nd number = taller).
+          Mobile 4/3 | sm 3/2 | md 16/9 | lg+ 5/2 (original) */}
       <div
         ref={stageRef}
-        className="relative aspect-[4/3] w-full md:aspect-[5/2]"
+        className="relative aspect-[4/3] w-full sm:aspect-[3/2] md:aspect-[16/9] lg:aspect-[5/2]"
       >
         <div data-img className="absolute inset-0 overflow-hidden bg-neutral-200">
           <Image
@@ -308,12 +321,17 @@ function Marker({
 
   return (
     <div
-      className="absolute"
-      style={{
-        left: `${spot.x}%`,
-        top: `${spot.y}%`,
-        zIndex: active ? 30 : 10,
-      }}
+      data-marker
+      className="absolute left-[var(--mx)] top-[var(--my)] md:left-[var(--x)] md:top-[var(--y)]"
+      style={
+        {
+          "--x": `${spot.x}%`,
+          "--y": `${spot.y}%`,
+          "--mx": `${spot.mx ?? spot.x}%`,
+          "--my": `${spot.my ?? spot.y}%`,
+          zIndex: active ? 30 : 10,
+        } as React.CSSProperties
+      }
       onPointerEnter={(e) => e.pointerType === "mouse" && onEnter()}
       onPointerLeave={(e) => e.pointerType === "mouse" && onLeave()}
       onFocus={onEnter}
@@ -322,6 +340,7 @@ function Marker({
           onLeave();
       }}
     >
+      {/* Touch e 44px tap area, visible dot er size same thake */}
       <button
         type="button"
         data-dot
@@ -329,17 +348,17 @@ function Marker({
         aria-expanded={active}
         aria-controls={`look-${spot.id}`}
         aria-label={`${spot.name}, ${price}`}
-        className="relative -ml-4 -mt-4 grid h-8 w-8 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+        className="relative -ml-[22px] -mt-[22px] grid h-11 w-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white md:-ml-4 md:-mt-4 md:h-8 md:w-8"
       >
         {!active && (
           <span
             aria-hidden
-            className="absolute inset-0 rounded-full bg-white/60 motion-safe:animate-ping"
+            className="absolute inset-[7px] rounded-full bg-white/60 motion-safe:animate-ping md:inset-0"
           />
         )}
         <span
           ref={coreRef}
-          className={`relative grid h-8 w-8 place-items-center rounded-full bg-white/90 shadow-lg ring-1 ring-black/5 backdrop-blur transition-opacity duration-300 ${
+          className={`relative grid h-[30px] w-[30px] place-items-center rounded-full bg-white/90 shadow-lg ring-1 ring-black/5 backdrop-blur transition-opacity duration-300 md:h-8 md:w-8 ${
             dimmed ? "opacity-50" : "opacity-100"
           }`}
           style={{ color: INK }}
@@ -361,6 +380,7 @@ function Marker({
         </span>
       </button>
 
+      {/* <640px: bottom sheet (fixed) | 640px+: dot er pashe card */}
       <div
         ref={cardRef}
         id={`look-${spot.id}`}
@@ -371,9 +391,26 @@ function Marker({
           right ? "left-0 ml-6" : "right-0 mr-6"
         } ${
           below ? "top-0 -mt-4" : "bottom-0 -mb-4"
-        } max-sm:fixed max-sm:inset-x-4 max-sm:bottom-4 max-sm:top-auto max-sm:m-0 max-sm:w-auto`}
+        } max-sm:fixed max-sm:inset-x-4 max-sm:bottom-[max(1rem,env(safe-area-inset-bottom))] max-sm:top-auto max-sm:m-0 max-sm:w-auto`}
       >
-        <div className="flex gap-3">
+        {/* Close button, shudhu mobile e */}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Close"
+          className="absolute right-2 top-2 grid size-9 place-items-center rounded-full text-[#1F2623]/60 sm:hidden"
+        >
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
+            <path
+              d="M3 3l10 10M13 3L3 13"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
+        <div className="flex gap-3 max-sm:pr-8">
           {spot.thumb && (
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
               <Image
@@ -397,7 +434,7 @@ function Marker({
         </div>
         <Link
           href={spot.href}
-          className="mt-3 flex h-10 items-center justify-center rounded-full text-sm font-medium text-white transition-colors hover:bg-[#33403B] focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="mt-3 flex h-11 items-center justify-center rounded-full text-sm font-medium text-white transition-colors hover:bg-[#33403B] focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-10"
           style={{ backgroundColor: INK, outlineColor: INK }}
         >
           View product

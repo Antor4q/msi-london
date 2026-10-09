@@ -50,6 +50,7 @@ export default function AboutSection() {
           start: "top bottom",
           end: "bottom top",
           scrub: 1,
+          invalidateOnRefresh: true,
         };
 
         (Object.keys(LAYERS) as (keyof typeof LAYERS)[]).forEach((key) => {
@@ -79,18 +80,19 @@ export default function AboutSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-white px-6 py-24 text-[#2e2a25] md:pl-[7%] md:pr-[5.4%] md:py-32"
+      className="relative overflow-hidden bg-white px-5 py-16 text-[#2e2a25] min-[400px]:px-6 sm:px-8 sm:py-20 md:pl-[7%] md:pr-[5.4%] md:py-32"
     >
       {/*
-        Two columns: left 46.5% / right 53.5% (matches the design).
+        Two columns: left 46.5% / right 53.5% (matches the design) from md up.
+        Below md: single column stack.
         Both columns start at the same top, so heading top === right image top.
       */}
-      <div className="mx-auto grid max-w-[1500px] grid-cols-1 gap-y-12 md:grid-cols-[46.5%_53.5%] md:items-start md:gap-y-0">
+      <div className="mx-auto grid max-w-[1500px] grid-cols-1 gap-y-10 sm:gap-y-12 md:grid-cols-[46.5%_53.5%] md:items-start md:gap-y-0">
         {/* LEFT: heading, then image underneath */}
         <div className="flex flex-col">
           <div data-layer="heading" className="will-change-transform">
             <h2
-              className={`${playfair.className} text-[clamp(3.5rem,9vw,7rem)] font-medium leading-[0.9] tracking-tight`}
+              className={`${playfair.className} text-[clamp(2.75rem,14vw,4.5rem)] font-medium leading-[0.9] tracking-tight md:text-[clamp(3.5rem,9vw,7rem)]`}
             >
               ABOUT US
             </h2>
@@ -98,7 +100,7 @@ export default function AboutSection() {
 
           <div
             data-layer="imageLeft"
-            className="mt-12 w-full will-change-transform md:w-[80%]"
+            className="mt-8 w-[88%] will-change-transform sm:mt-10 sm:w-[78%] md:mt-12 md:w-[80%]"
           >
             <div className="relative aspect-[575/400] w-full overflow-hidden">
               <Image
@@ -106,9 +108,8 @@ export default function AboutSection() {
                 src="/ab1.jpg"
                 alt="Cream bouclé sofa on a walnut base"
                 fill
-                sizes="(min-width: 768px) 37vw, 100vw"
+                sizes="(min-width: 768px) 37vw, (min-width: 640px) 70vw, 88vw"
                 className="object-cover will-change-transform"
-                priority
               />
             </div>
           </div>
@@ -118,7 +119,7 @@ export default function AboutSection() {
         <div className="flex flex-col">
           <div
             data-layer="imageRight"
-            className="will-change-transform md:ml-auto md:w-[64%]"
+            className="ml-auto w-[88%] will-change-transform sm:w-[78%] md:w-[64%]"
           >
             <div className="relative aspect-[530/418] w-full overflow-hidden">
               <Image
@@ -126,15 +127,18 @@ export default function AboutSection() {
                 src="/ab2.jpg"
                 alt="Interior lounge with green accent chairs"
                 fill
-                sizes="(min-width: 768px) 34vw, 100vw"
+                sizes="(min-width: 768px) 34vw, (min-width: 640px) 70vw, 88vw"
                 className="object-cover will-change-transform"
               />
             </div>
           </div>
 
-          <div data-layer="text" className="mt-12 will-change-transform">
+          <div
+            data-layer="text"
+            className="mt-8 will-change-transform sm:mt-10 md:mt-12"
+          >
             <p
-              className={`${playfair.className} text-[clamp(1.6rem,2.7vw,2.5rem)] font-semibold leading-[1.2]`}
+              className={`${playfair.className} max-w-[640px] text-[clamp(1.25rem,5.6vw,1.75rem)] font-semibold leading-[1.25] md:max-w-none md:text-[clamp(1.6rem,2.7vw,2.5rem)] md:leading-[1.2]`}
             >
               MSI London is a furniture and interiors supplier based in Barnet,
               London. We work with interior designers, architects, contractors.
@@ -142,7 +146,7 @@ export default function AboutSection() {
 
             <a
               href="/about"
-              className="mt-8 inline-block bg-[#2e2a25] px-10 py-4 font-sans text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#4a443c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e2a25]"
+              className="mt-6 inline-block bg-[#2e2a25] px-8 py-3.5 font-sans text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#4a443c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2e2a25] sm:mt-8 md:px-10 md:py-4"
             >
               Learn More
             </a>

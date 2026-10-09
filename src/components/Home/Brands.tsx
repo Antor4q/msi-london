@@ -35,26 +35,32 @@ export default function Brands() {
     () => {
       const mm = gsap.matchMedia();
 
-      mm.add({ reduce: "(prefers-reduced-motion: reduce)" }, (context) => {
-        const { reduce } = context.conditions as { reduce: boolean };
-        if (reduce) return;
+      // NOTE: age ekhane sudhu "reduce" condition chhilo, tai callback
+      // normal user der jonno cholto-i na. Ekhon "no-preference" e chole,
+      // reduced-motion user der jonno kono motion hoy na.
+      mm.add(
+        { motion: "(prefers-reduced-motion: no-preference)" },
+        () => {
+          const cells = gsap.utils.toArray<HTMLElement>(
+            "[data-brand]",
+            root.current
+          );
+          gsap.set(cells, { y: 30, opacity: 0 });
 
-        const cells = gsap.utils.toArray<HTMLElement>("[data-brand]", root.current);
-        gsap.set(cells, { y: 30, opacity: 0 });
-
-        ScrollTrigger.batch(cells, {
-          start: "top 90%",
-          once: true,
-          onEnter: (batch) =>
-            gsap.to(batch, {
-              y: 0,
-              opacity: 1,
-              duration: 0.8,
-              ease: "power3.out",
-              stagger: 0.07,
-            }),
-        });
-      });
+          ScrollTrigger.batch(cells, {
+            start: "top 92%",
+            once: true,
+            onEnter: (batch) =>
+              gsap.to(batch, {
+                y: 0,
+                opacity: 1,
+                duration: 0.8,
+                ease: "power3.out",
+                stagger: 0.07,
+              }),
+          });
+        }
+      );
 
       return () => mm.revert();
     },
@@ -62,22 +68,18 @@ export default function Brands() {
   );
 
   return (
-    <div ref={root} className="mx-auto w-full max-w-[1500px] pb-24">
+    <div ref={root} className="mx-auto w-full max-w-[1500px] pb-16 md:pb-24">
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2
-          className={`font-playfair uppercase text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
-        >
-          Brands we work with
-        </h2>
-         
+          <h2 className="font-playfair text-[clamp(2.25rem,10vw,3.5rem)] font-bold uppercase leading-none tracking-tight md:text-[clamp(3rem,7vw,6rem)]">
+            Brands we work with
+          </h2>
         </div>
-
-       
       </div>
 
-      {/* Hairline grid: outer top/left border + each cell's right/bottom border */}
-      <ul className="mt-12 grid grid-cols-2 border-l border-t border-[#1f1f1d]/15 md:mt-16 md:grid-cols-4">
+      {/* Hairline grid: outer top/left border + each cell's right/bottom border.
+          Mobile 2 col, md+ 4 col */}
+      <ul className="mt-10 grid grid-cols-2 border-l border-t border-[#1f1f1d]/15 sm:mt-12 md:mt-16 md:grid-cols-4">
         {BRANDS.map((b) => (
           <li
             key={b.name}
@@ -87,7 +89,7 @@ export default function Brands() {
             <Link
               href={b.href}
               aria-label={b.name}
-              className="group relative flex min-h-[130px] flex-col items-center justify-center px-4 py-10 outline-none transition-colors duration-500 hover:bg-white focus-visible:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1f1f1d] md:min-h-[210px] motion-reduce:transition-none"
+              className="group relative flex min-h-[110px] flex-col items-center justify-center px-3 py-8 outline-none transition-colors duration-500 hover:bg-white focus-visible:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1f1f1d] min-[400px]:min-h-[130px] min-[400px]:px-4 min-[400px]:py-10 sm:min-h-[150px] md:min-h-[210px] motion-reduce:transition-none"
             >
               {b.logo ? (
                 <Image
@@ -95,10 +97,10 @@ export default function Brands() {
                   alt=""
                   width={160}
                   height={48}
-                  className="h-8 w-auto opacity-55 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100 md:h-10"
+                  className="h-7 w-auto max-w-[85%] object-contain opacity-55 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100 min-[400px]:h-8 md:h-10"
                 />
               ) : (
-                <span className="text-center font-serif text-xl uppercase tracking-[0.12em] text-[#2b2b28]/55 transition-colors duration-500 group-hover:text-[#2b2b28] group-focus-visible:text-[#2b2b28] md:text-2xl">
+                <span className="text-center font-serif text-[15px] uppercase tracking-[0.12em] text-[#2b2b28]/55 transition-colors duration-500 group-hover:text-[#2b2b28] group-focus-visible:text-[#2b2b28] min-[400px]:text-lg sm:text-xl md:text-lg lg:text-xl xl:text-2xl">
                   {b.name}
                 </span>
               )}

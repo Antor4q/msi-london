@@ -20,7 +20,7 @@ type Testimonial = {
 
 // Fixed pull-quote on the left image. Replace with your own line.
 const FIXED_QUOTE = "Furniture chosen with care, delivered with precision.";
-const FIXED_IMAGE = "/pr5.jpg";
+const FIXED_IMAGE = "/fe.webp";
 
 // SAMPLE copy written to look realistic. The people and studios below are fictional.
 // Replace every entry with a REAL client quote (with their permission) before launch.
@@ -31,7 +31,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: "Eleanor Hayes",
     role: "Interior Designer, Studio Hayes",
     rating: 5,
-    avatar: "/pr1.jpg",
+    avatar: "/pro1.jpg",
   },
   {
     quote:
@@ -39,7 +39,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: "Daniel Okafor",
     role: "Associate Architect, Okafor Partners",
     rating: 5,
-    avatar: "/pr2.jpg",
+    avatar: "/pro2.jpg",
   },
   {
     quote:
@@ -47,7 +47,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: "Priya Raman",
     role: "Founder, Raman Interiors",
     rating: 5,
-    avatar: "/pr3.jpg",
+    avatar: "/pro4.jpg",
   },
   {
     quote:
@@ -55,7 +55,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: "James Whitcombe",
     role: "Project Director, Whitcombe Developments",
     rating: 5,
-    avatar: "/pr4.jpg",
+    avatar: "/pro3.jpg",
   },
 ];
 
@@ -118,6 +118,7 @@ export default function Testimonials() {
   const root = useRef<HTMLElement>(null);
   const busy = useRef(false);
   const started = useRef(false);
+  const touchX = useRef<number | null>(null);
 
   const [index, setIndex] = useState(0);
   const count = TESTIMONIALS.length;
@@ -152,6 +153,17 @@ export default function Testimonials() {
         { opacity: 0, y: -10, duration: 0.35, ease: "power2.in" },
         "<",
       );
+  };
+
+  // Touch swipe (mobile/tablet): left swipe = next, right swipe = previous
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) > 50) goTo(index + (dx < 0 ? 1 : -1));
   };
 
   // Slider text: intro on first scroll, entrance on every change
@@ -201,69 +213,87 @@ export default function Testimonials() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.fromTo(
-          "[data-title]",
-          { y: 50 },
-          {
-            y: -50,
-            ease: "none",
-            scrollTrigger: {
-              trigger: "[data-title]",
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
-            },
-          },
-        );
+      mm.add(
+        {
+          desktop:
+            "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
+          mobile:
+            "(max-width: 767px) and (prefers-reduced-motion: no-preference)",
+        },
+        (context) => {
+          const { desktop } = context.conditions as { desktop: boolean };
+          const k = desktop ? 1 : 0.5; // mobile e motion halka
 
-        gsap.fromTo(
-          "[data-parallax]",
-          { yPercent: -8 },
-          {
-            yPercent: 8,
-            ease: "none",
+          gsap.fromTo(
+            "[data-title]",
+            { y: 50 * k },
+            {
+              y: -50 * k,
+              ease: "none",
+              scrollTrigger: {
+                trigger: "[data-title]",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            "[data-parallax]",
+            { yPercent: -8 },
+            {
+              yPercent: 8,
+              ease: "none",
+              scrollTrigger: {
+                trigger: "[data-frame]",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+                invalidateOnRefresh: true,
+              },
+            },
+          );
+
+          gsap.from("[data-fixed]", {
+            y: 30,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out",
             scrollTrigger: {
               trigger: "[data-frame]",
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
+              start: "top 75%",
+              once: true,
             },
-          },
-        );
-
-        gsap.from("[data-fixed]", {
-          y: 30,
-          opacity: 0,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: "[data-frame]",
-            start: "top 60%",
-            once: true,
-          },
-        });
-      });
+          });
+        },
+      );
       return () => mm.revert();
     },
     { scope: root },
   );
 
   return (
-    <section ref={root} className="bg-white">
-      <div className="mx-auto max-w-[1500px] px- py-20">
+    <section ref={root} className="bg-[#E5E5E3]">
+      {/* NOTE: age `px-` chhilo (incomplete class, kono kaj korto na), tule diyechi.
+          Horizontal padding parent section theke ashbe. */}
+      <div className="mx-auto max-w-[1500px] py-14 sm:py-16 md:py-24">
         <h2
           data-title
-          className="font-playfair uppercase text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight"
+          className="font-playfair text-[clamp(2.25rem,10vw,3.5rem)] font-bold uppercase leading-none tracking-tight md:text-[clamp(3rem,7vw,6rem)]"
         >
           What others Say
         </h2>
 
-        <div className="mt-10 grid gap-8 md:mt-14 md:grid-cols-12 md:gap-0">
+        {/*
+          Mobile + tablet (below 1024px): image upore, quote niche (stacked).
+          Desktop (1024px+): 12-col, left image / right quote (original).
+        */}
+        <div className="mt-8 grid gap-8 sm:mt-10 md:mt-14 md:gap-10 lg:grid-cols-12 lg:gap-0">
           {/* Left: one fixed image with one fixed quote on it */}
           <div
             data-frame
-            className="relative aspect-[4/3] w-full overflow-hidden bg-[#ececea] md:col-span-5 md:aspect-[6/5]"
+            className="relative aspect-[4/3] w-full overflow-hidden bg-[#ececea] sm:aspect-[16/10] lg:col-span-5 lg:aspect-[6/5]"
           >
             <div
               data-parallax
@@ -273,7 +303,7 @@ export default function Testimonials() {
                 src={FIXED_IMAGE}
                 alt="Finished interior styled with furniture from the collection"
                 fill
-                sizes="(min-width: 768px) 40vw, 100vw"
+                sizes="(min-width: 1024px) 40vw, 100vw"
                 className="object-cover"
               />
             </div>
@@ -286,7 +316,7 @@ export default function Testimonials() {
 
             <p
               data-fixed
-              className="absolute inset-x-6 bottom-6 font-serif text-xl leading-[1.2] text-white md:inset-x-8 md:bottom-8 md:text-[28px]"
+              className="absolute inset-x-5 bottom-5 font-serif text-lg leading-[1.2] text-white min-[400px]:text-xl sm:inset-x-6 sm:bottom-6 sm:text-2xl md:inset-x-8 md:bottom-8 md:text-[28px] lg:text-2xl xl:text-[28px]"
             >
               <span aria-hidden className="mr-1 text-white/70">
                 “
@@ -295,9 +325,16 @@ export default function Testimonials() {
             </p>
           </div>
 
-          {/* Right: quote slider (text only) */}
-          <figure className="flex flex-col justify-between gap-8 md:col-span-6 md:col-start-7 md:gap-8">
-            <div aria-live="polite" className="min-h-[260px] md:min-h-[280px]">
+          {/* Right: quote slider (text only). Mobile e swipe kora jay. */}
+          <figure
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            className="flex flex-col justify-between gap-6 sm:gap-8 lg:col-span-6 lg:col-start-7"
+          >
+            <div
+              aria-live="polite"
+              className="min-h-[370px] min-[400px]:min-h-[320px] sm:min-h-[330px] lg:min-h-[340px]"
+            >
               <span
                 aria-hidden
                 className="block font-serif text-5xl leading-none text-[#2b2b28]/30 md:text-6xl"
@@ -305,7 +342,7 @@ export default function Testimonials() {
                 “
               </span>
 
-              <blockquote className="mt-2 font-serif text-xl leading-[1.3] text-[#2b2b28] md:text-[28px] md:leading-[1.25]">
+              <blockquote className="mt-2 font-serif text-xl leading-[1.3] text-[#2b2b28] sm:text-2xl md:text-[28px] md:leading-[1.25] lg:text-2xl xl:text-[28px]">
                 {current.quote.split(" ").map((word, i) => (
                   <Fragment key={`${index}-${i}`}>
                     <span className="inline-block overflow-hidden pb-[0.15em] align-top -mb-[0.15em]">
@@ -317,7 +354,7 @@ export default function Testimonials() {
                 ))}
               </blockquote>
 
-              <div data-meta className="mt-6">
+              <div data-meta className="mt-5 sm:mt-6">
                 <Stars rating={current.rating} />
               </div>
             </div>
@@ -325,10 +362,11 @@ export default function Testimonials() {
             <div>
               <div className="h-px w-full bg-[#1f1f1d]/15" />
 
-              <figcaption className="mt-5 flex items-center justify-between gap-6">
-                <div data-meta className="flex items-center gap-4">
+              {/* mobile: naam upore, controls niche | sm+: ek row */}
+              <figcaption className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div data-meta className="flex min-w-0 items-center gap-4">
                   <Avatar person={current} />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[15px] tracking-wide text-[#2b2b28]">
                       {current.name}
                     </p>
@@ -338,7 +376,7 @@ export default function Testimonials() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-5">
+                <div className="flex w-full shrink-0 items-center justify-between gap-5 sm:w-auto">
                   <span className="text-sm tabular-nums tracking-widest text-[#2b2b28]/60">
                     {pad(index + 1)} / {pad(count)}
                   </span>
@@ -350,8 +388,7 @@ export default function Testimonials() {
                       onClick={() => goTo(index - 1)}
                       className="flex size-11 items-center justify-center border border-[#1f1f1d]/30 text-[#2b2b28] outline-none transition-colors duration-300 hover:bg-[#1f1f1d] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f1f1d] motion-reduce:transition-none"
                     >
-                      <ArrowLeft/>
-                     
+                      <ArrowLeft />
                     </button>
                     <button
                       type="button"
@@ -359,8 +396,7 @@ export default function Testimonials() {
                       onClick={() => goTo(index + 1)}
                       className="-ml-px flex size-11 items-center justify-center border border-[#1f1f1d]/30 text-[#2b2b28] outline-none transition-colors duration-300 hover:bg-[#1f1f1d] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f1f1d] motion-reduce:transition-none"
                     >
-                       <ArrowRight/>
-                     
+                      <ArrowRight />
                     </button>
                   </div>
                 </div>

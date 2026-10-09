@@ -58,6 +58,9 @@ export default function Collection() {
 
       mm.add(
         {
+          // "mobile" condition add korsi: age phone e kono condition match
+          // korto na, tai callback (entrance animation) cholto-i na.
+          mobile: "(max-width: 767px)",
           desktop: "(min-width: 768px)",
           fine: "(hover: hover) and (pointer: fine)",
           reduce: "(prefers-reduced-motion: reduce)",
@@ -72,7 +75,7 @@ export default function Collection() {
           const cards = gsap.utils.toArray<HTMLElement>("[data-card]");
           const cleanups: Array<() => void> = [];
 
-          // 1. Base tilt: only on desktop, mobile carousel stays straight
+          // 1. Base tilt: only on desktop/tablet, mobile carousel stays straight
           cards.forEach((card) => {
             const frame = card.querySelector("[data-frame]");
             const rot = desktop ? Number(card.dataset.rotate) : 0;
@@ -82,7 +85,7 @@ export default function Collection() {
           // 2. Scroll entrance with stagger (single orchestrated moment)
           if (!reduce) {
             gsap.from(cards, {
-              y: 70,
+              y: desktop ? 70 : 40,
               opacity: 0,
               duration: 1,
               ease: "power3.out",
@@ -95,8 +98,9 @@ export default function Collection() {
             });
           }
 
-          // 3. Hover: straighten + scale up (desktop only)
-          if (desktop && !reduce) {
+          // 3. Hover: straighten + scale up
+          // Shudhu mouse device e (touch tablet e tap korle atke jay)
+          if (desktop && fine && !reduce) {
             cards.forEach((card) => {
               const frame = card.querySelector("[data-frame]");
               const rot = Number(card.dataset.rotate);
@@ -187,72 +191,72 @@ export default function Collection() {
   );
 
   return (
-  <div ref={root} className="bg-[#E5E5E3] md:px-[5%] md:py-22 px-6 py-16">
-  <div
-      
-      className="mx-auto flex w-full max-w-[1500px] flex-col"
+    <div
+      ref={root}
+      className="bg-[#E5E5E3] px-6 py-14 sm:py-16 md:px-[5%] md:py-[5.5rem]"
     >
-     <h2
-          className={`font-playfair text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-tight`}
-        >
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col">
+        <h2 className="font-playfair text-[clamp(2.25rem,10.5vw,3.5rem)] font-bold leading-none tracking-tight md:text-[clamp(3rem,7vw,6rem)]">
           OUR COLLECTION
         </h2>
 
-      {/* Mobile: scroll-snap carousel. Desktop: tilted row. */}
-      <ul
-        className="
-          mt-14 -mx-6 flex w-[calc(100%+3rem)] snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4
-          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-          md:mx-0 md:w-full md:snap-none md:items-start md:gap-5 md:overflow-visible md:px-0 md:py-8
-        "
-      >
-        {ITEMS.map((item, i) => (
-          <li
-            key={item.name}
-            data-card
-            data-rotate={item.rotate}
-            className={`relative w-[72%] shrink-0 snap-center md:w-auto md:flex-1 ${
-              i % 2 === 1 ? "md:mt-12" : ""
-            }`}
-          >
-            <Link
-              href={item.href}
-              className="group block outline-none"
-              aria-label={`View ${item.name}`}
+        {/*
+          Mobile (<768px): scroll-snap carousel.
+          Tablet (768-1023px): 2 column grid (odd card niche stagger).
+          Desktop (1024px+): tilted 4 card row (original).
+        */}
+        <ul
+          className="
+            mt-10 -mx-6 flex w-[calc(100%+3rem)] snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-6 pb-4
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            sm:mt-12
+            md:mx-0 md:mt-14 md:grid md:w-full md:grid-cols-2 md:snap-none md:items-start md:gap-x-8 md:gap-y-6 md:overflow-visible md:px-0 md:py-8
+            lg:flex lg:gap-5
+          "
+        >
+          {ITEMS.map((item, i) => (
+            <li
+              key={item.name}
+              data-card
+              data-rotate={item.rotate}
+              className={`relative w-[72%] shrink-0 snap-center sm:w-[46%] md:w-auto lg:flex-1 ${
+                i % 2 === 1 ? "md:mt-12" : ""
+              }`}
             >
-              <div
-                data-frame
-                className="relative aspect-[4/5] w-full overflow-hidden bg-[#d9d9d6] will-change-transform group-focus-visible:ring-2 group-focus-visible:ring-[#1f1f1d] group-focus-visible:ring-offset-4 group-focus-visible:ring-offset-[#E5E5E3]"
+              <Link
+                href={item.href}
+                className="group block outline-none"
+                aria-label={`View ${item.name}`}
               >
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  fill
-                  sizes="(min-width: 768px) 22vw, 72vw"
-                  className="object-cover"
-                />
-              </div>
-              <p className="mt-5 text-center relative font-arial font-medium pb-1 text-sm tracking-wide text-[#2b2b28] md:text-2xl">
-                {item.name}
-              </p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <div
+                  data-frame
+                  className="relative aspect-[4/5] w-full overflow-hidden bg-[#d9d9d6] will-change-transform group-focus-visible:ring-2 group-focus-visible:ring-[#1f1f1d] group-focus-visible:ring-offset-4 group-focus-visible:ring-offset-[#E5E5E3]"
+                >
+                  <Image
+                    src={item.src}
+                    alt={item.alt}
+                    fill
+                    sizes="(min-width: 1024px) 22vw, (min-width: 768px) 42vw, (min-width: 640px) 46vw, 72vw"
+                    className="object-cover"
+                  />
+                </div>
+                <p className="relative mt-4 pb-1 text-center font-arial text-base font-medium tracking-wide text-[#2b2b28] sm:text-lg md:mt-5 md:text-2xl">
+                  {item.name}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
-      
-
-    
-
-      {/* Custom cursor, hidden on touch devices */}
-      {/* <div
-        ref={cursor}
-        aria-hidden
-        className="pointer-events-none fixed left-0 top-0 z-50 hidden size-20 items-center justify-center rounded-full bg-[#1f1f1d] text-xs font-medium tracking-wide text-white opacity-0 md:flex"
-      >
-        View
-      </div> */}
+        {/* Custom cursor, hidden on touch devices */}
+        {/* <div
+          ref={cursor}
+          aria-hidden
+          className="pointer-events-none fixed left-0 top-0 z-50 hidden size-20 items-center justify-center rounded-full bg-[#1f1f1d] text-xs font-medium tracking-wide text-white opacity-0 md:flex"
+        >
+          View
+        </div> */}
+      </div>
     </div>
-  </div>
   );
 }

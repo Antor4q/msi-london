@@ -59,7 +59,7 @@ export default function FaqSection() {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: "[data-list]", start: "top 80%", once: true },
+          scrollTrigger: { trigger: "[data-list]", start: "top 85%", once: true },
         });
         tl.fromTo(
           "[data-line]",
@@ -93,10 +93,10 @@ export default function FaqSection() {
     <section
       ref={rootRef}
       aria-label={title}
-      className="mx-auto w-full max-w-[1500px] pb-24"
+      className="mx-auto w-full max-w-[1500px] pb-16 md:pb-24"
       style={{ color: INK }}
     >
-      <h2 className="mb-14 max-w-[16ch] text-balance font-playfair text-[clamp(3rem,7vw,6rem)] font-bold uppercase leading-none tracking-tight sm:mb-20">
+      <h2 className="mb-8 max-w-[16ch] text-balance font-playfair text-[clamp(2rem,9.5vw,3.5rem)] font-bold uppercase leading-none tracking-tight min-[400px]:mb-10 sm:mb-14 md:mb-20 md:text-[clamp(3rem,7vw,6rem)]">
         {title}
       </h2>
 
@@ -160,6 +160,8 @@ function Item({ index, q, a, open, initiallyOpen, onToggle }: ItemProps) {
       height: open ? "auto" : 0,
       duration: d(0.65),
       ease: "power3.inOut",
+      // Page height bodlay, tai niche er section er ScrollTrigger position refresh
+      onComplete: () => ScrollTrigger.refresh(),
     });
     gsap.to(icon, {
       rotate: open ? 45 : 0,
@@ -193,15 +195,15 @@ function Item({ index, q, a, open, initiallyOpen, onToggle }: ItemProps) {
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={panelId}
-          className="group flex w-full items-center justify-between gap-6 py-7 text-left focus-visible:outline-2 focus-visible:outline-offset-4 sm:py-9"
+          className="group flex w-full items-center justify-between gap-4 py-6 text-left focus-visible:outline-2 focus-visible:outline-offset-4 sm:gap-6 sm:py-9"
           style={{ outlineColor: INK }}
         >
-          <span className="font-playfair text-2xl leading-snug sm:text-3xl">
+          <span className="font-playfair text-xl leading-snug min-[400px]:text-2xl sm:text-3xl">
             {q}
           </span>
           <span
             ref={ringRef}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full ring-1 ring-[#1F2623]/25 transition-shadow duration-300 group-hover:ring-[#1F2623]"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full ring-1 ring-[#1F2623]/25 transition-shadow duration-300 sm:h-11 sm:w-11 [@media(hover:hover)]:group-hover:ring-[#1F2623]"
             style={{ color: INK }}
           >
             <svg
@@ -228,7 +230,7 @@ function Item({ index, q, a, open, initiallyOpen, onToggle }: ItemProps) {
         aria-labelledby={buttonId}
         className={`overflow-hidden ${initiallyOpen ? "" : "h-0"}`}
       >
-        <p className="max-w-2xl pb-9 pr-16 text-base leading-relaxed opacity-70 sm:text-lg">
+        <p className="max-w-2xl pb-6 pr-2 text-[15px] leading-relaxed opacity-70 min-[400px]:pr-6 sm:pb-9 sm:pr-16 sm:text-lg">
           {a}
         </p>
       </div>
